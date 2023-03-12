@@ -1,17 +1,19 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
+using UnityStandardAssets.ImageEffects;
 
-namespace UnityStandardAssets.ImageEffects
+namespace MOBA.Standard_Assets.Effects.ImageEffects.Scripts
 {
     public enum AAMode
     {
-        FXAA2 = 0,
-        FXAA3Console = 1,
-        FXAA1PresetA = 2,
-        FXAA1PresetB = 3,
-        NFAA = 4,
-        SSAA = 5,
-        DLAA = 6,
+        Fxaa2 = 0,
+        Fxaa3Console = 1,
+        Fxaa1PresetA = 2,
+        Fxaa1PresetB = 3,
+        Nfaa = 4,
+        Ssaa = 5,
+        Dlaa = 6,
     }
 
     [ExecuteInEditMode]
@@ -19,9 +21,9 @@ namespace UnityStandardAssets.ImageEffects
     [AddComponentMenu("Image Effects/Other/Antialiasing")]
     public class Antialiasing : PostEffectsBase
     {
-        public AAMode mode = AAMode.FXAA3Console;
+        public AAMode mode = AAMode.Fxaa3Console;
 
-        public bool showGeneratedNormals = false;
+        public bool showGeneratedNormals;
         public float offsetScale = 0.2f;
         public float blurRadius = 18.0f;
 
@@ -29,22 +31,31 @@ namespace UnityStandardAssets.ImageEffects
         public float edgeThreshold = 0.2f;
         public float edgeSharpness = 4.0f;
 
-        public bool dlaaSharp = false;
+        public bool dlaaSharp;
 
         public Shader ssaaShader;
-        private Material ssaa;
+        private Material _ssaa;
         public Shader dlaaShader;
-        private Material dlaa;
-        public Shader nfaaShader;
-        private Material nfaa;
-        public Shader shaderFXAAPreset2;
-        private Material materialFXAAPreset2;
-        public Shader shaderFXAAPreset3;
-        private Material materialFXAAPreset3;
-        public Shader shaderFXAAII;
-        private Material materialFXAAII;
-        public Shader shaderFXAAIII;
-        private Material materialFXAAIII;
+        private Material _dlaa;
+        [NonSerialized] private readonly Shader _nfaaShader;
+        private Material _nfaa;
+        [FormerlySerializedAs("shaderFXAAPreset2")] public Shader shaderFxaaPreset2;
+        private Material _materialFxaaPreset2;
+        [FormerlySerializedAs("shaderFXAAPreset3")] public Shader shaderFxaaPreset3;
+        private Material _materialFxaaPreset3;
+        [FormerlySerializedAs("shaderFXAAII")] public Shader shaderFxaaii;
+        private Material _materialFxaaii;
+        [FormerlySerializedAs("shaderFXAAIII")] public Shader shaderFxaaiii;
+        private Material _materialFxaaiii;
+        private static readonly int OffsetScale = Shader.PropertyToID("_OffsetScale");
+        private static readonly int BlurRadius = Shader.PropertyToID("_BlurRadius");
+        private static readonly int EdgeThresholdMin = Shader.PropertyToID("_EdgeThresholdMin");
+        private static readonly int EdgeThreshold = Shader.PropertyToID("_EdgeThreshold");
+        private static readonly int EdgeSharpness = Shader.PropertyToID("_EdgeSharpness");
+        public Antialiasing(Shader nfaaShader)
+        {
+            _nfaaShader = nfaaShader;
+        }
 
 
         public Material CurrentAAMaterial()
@@ -53,29 +64,26 @@ namespace UnityStandardAssets.ImageEffects
 
             switch (mode)
             {
-                case AAMode.FXAA3Console:
-                    returnValue = materialFXAAIII;
+                case AAMode.Fxaa3Console:
+                    returnValue = _materialFxaaiii;
                     break;
-                case AAMode.FXAA2:
-                    returnValue = materialFXAAII;
+                case AAMode.Fxaa2:
+                    returnValue = _materialFxaaii;
                     break;
-                case AAMode.FXAA1PresetA:
-                    returnValue = materialFXAAPreset2;
+                case AAMode.Fxaa1PresetA:
+                    returnValue = _materialFxaaPreset2;
                     break;
-                case AAMode.FXAA1PresetB:
-                    returnValue = materialFXAAPreset3;
+                case AAMode.Fxaa1PresetB:
+                    returnValue = _materialFxaaPreset3;
                     break;
-                case AAMode.NFAA:
-                    returnValue = nfaa;
+                case AAMode.Nfaa:
+                    returnValue = _nfaa;
                     break;
-                case AAMode.SSAA:
-                    returnValue = ssaa;
+                case AAMode.Ssaa:
+                    returnValue = _ssaa;
                     break;
-                case AAMode.DLAA:
-                    returnValue = dlaa;
-                    break;
-                default:
-                    returnValue = null;
+                case AAMode.Dlaa:
+                    returnValue = _dlaa;
                     break;
             }
 
@@ -87,13 +95,13 @@ namespace UnityStandardAssets.ImageEffects
         {
             CheckSupport(false);
 
-            materialFXAAPreset2 = CreateMaterial(shaderFXAAPreset2, materialFXAAPreset2);
-            materialFXAAPreset3 = CreateMaterial(shaderFXAAPreset3, materialFXAAPreset3);
-            materialFXAAII = CreateMaterial(shaderFXAAII, materialFXAAII);
-            materialFXAAIII = CreateMaterial(shaderFXAAIII, materialFXAAIII);
-            nfaa = CreateMaterial(nfaaShader, nfaa);
-            ssaa = CreateMaterial(ssaaShader, ssaa);
-            dlaa = CreateMaterial(dlaaShader, dlaa);
+            _materialFxaaPreset2 = CreateMaterial(shaderFxaaPreset2, _materialFxaaPreset2);
+            _materialFxaaPreset3 = CreateMaterial(shaderFxaaPreset3, _materialFxaaPreset3);
+            _materialFxaaii = CreateMaterial(shaderFxaaii, _materialFxaaii);
+            _materialFxaaiii = CreateMaterial(shaderFxaaiii, _materialFxaaiii);
+            _nfaa = CreateMaterial(_nfaaShader, _nfaa);
+            _ssaa = CreateMaterial(ssaaShader, _ssaa);
+            _dlaa = CreateMaterial(dlaaShader, _dlaa);
 
             if (!ssaaShader.isSupported)
             {
@@ -116,56 +124,56 @@ namespace UnityStandardAssets.ImageEffects
 			// ----------------------------------------------------------------
             // FXAA antialiasing modes
 
-            if (mode == AAMode.FXAA3Console && (materialFXAAIII != null))
+            if (mode == AAMode.Fxaa3Console && (_materialFxaaiii != null))
             {
-                materialFXAAIII.SetFloat("_EdgeThresholdMin", edgeThresholdMin);
-                materialFXAAIII.SetFloat("_EdgeThreshold", edgeThreshold);
-                materialFXAAIII.SetFloat("_EdgeSharpness", edgeSharpness);
+                _materialFxaaiii.SetFloat(EdgeThresholdMin, edgeThresholdMin);
+                _materialFxaaiii.SetFloat(EdgeThreshold, edgeThreshold);
+                _materialFxaaiii.SetFloat(EdgeSharpness, edgeSharpness);
 
-                Graphics.Blit(source, destination, materialFXAAIII);
+                Graphics.Blit(source, destination, _materialFxaaiii);
             }
-            else if (mode == AAMode.FXAA1PresetB && (materialFXAAPreset3 != null))
+            else if (mode == AAMode.Fxaa1PresetB && (_materialFxaaPreset3 != null))
             {
-                Graphics.Blit(source, destination, materialFXAAPreset3);
+                Graphics.Blit(source, destination, _materialFxaaPreset3);
             }
-            else if (mode == AAMode.FXAA1PresetA && materialFXAAPreset2 != null)
+            else if (mode == AAMode.Fxaa1PresetA && _materialFxaaPreset2 != null)
             {
                 source.anisoLevel = 4;
-                Graphics.Blit(source, destination, materialFXAAPreset2);
+                Graphics.Blit(source, destination, _materialFxaaPreset2);
                 source.anisoLevel = 0;
             }
-            else if (mode == AAMode.FXAA2 && materialFXAAII != null)
+            else if (mode == AAMode.Fxaa2 && _materialFxaaii != null)
             {
-                Graphics.Blit(source, destination, materialFXAAII);
+                Graphics.Blit(source, destination, _materialFxaaii);
             }
-            else if (mode == AAMode.SSAA && ssaa != null)
+            else if (mode == AAMode.Ssaa && _ssaa != null)
             {
 				// ----------------------------------------------------------------
                 // SSAA antialiasing
-                Graphics.Blit(source, destination, ssaa);
+                Graphics.Blit(source, destination, _ssaa);
             }
-            else if (mode == AAMode.DLAA && dlaa != null)
+            else if (mode == AAMode.Dlaa && _dlaa != null)
             {
 				// ----------------------------------------------------------------
 				// DLAA antialiasing
 
                 source.anisoLevel = 0;
                 RenderTexture interim = RenderTexture.GetTemporary(source.width, source.height);
-                Graphics.Blit(source, interim, dlaa, 0);
-                Graphics.Blit(interim, destination, dlaa, dlaaSharp ? 2 : 1);
+                Graphics.Blit(source, interim, _dlaa, 0);
+                Graphics.Blit(interim, destination, _dlaa, dlaaSharp ? 2 : 1);
                 RenderTexture.ReleaseTemporary(interim);
             }
-            else if (mode == AAMode.NFAA && nfaa != null)
+            else if (mode == AAMode.Nfaa && _nfaa != null)
             {
                 // ----------------------------------------------------------------
                 // nfaa antialiasing
 
                 source.anisoLevel = 0;
 
-                nfaa.SetFloat("_OffsetScale", offsetScale);
-                nfaa.SetFloat("_BlurRadius", blurRadius);
+                _nfaa.SetFloat(OffsetScale, offsetScale);
+                _nfaa.SetFloat(BlurRadius, blurRadius);
 
-                Graphics.Blit(source, destination, nfaa, showGeneratedNormals ? 1 : 0);
+                Graphics.Blit(source, destination, _nfaa, showGeneratedNormals ? 1 : 0);
             }
             else
             {

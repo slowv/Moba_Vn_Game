@@ -1,7 +1,7 @@
-using System;
 using UnityEngine;
+using UnityStandardAssets.Water;
 
-namespace UnityStandardAssets.Water
+namespace MOBA.Standard_Assets.Environment.Water.Water.Scripts
 {
     [ExecuteInEditMode]
     public class WaterTile : MonoBehaviour
@@ -16,30 +16,17 @@ namespace UnityStandardAssets.Water
         }
 
 
+        // ReSharper disable Unity.PerformanceAnalysis
         void AcquireComponents()
         {
             if (!reflection)
             {
-                if (transform.parent)
-                {
-                    reflection = transform.parent.GetComponent<PlanarReflection>();
-                }
-                else
-                {
-                    reflection = transform.GetComponent<PlanarReflection>();
-                }
+                reflection = transform.parent ? transform.parent.GetComponent<PlanarReflection>() : transform.GetComponent<PlanarReflection>();
             }
 
             if (!waterBase)
             {
-                if (transform.parent)
-                {
-                    waterBase = transform.parent.GetComponent<WaterBase>();
-                }
-                else
-                {
-                    waterBase = transform.GetComponent<WaterBase>();
-                }
+                waterBase = transform.parent ? transform.parent.GetComponent<WaterBase>() : transform.GetComponent<WaterBase>();
             }
         }
 
